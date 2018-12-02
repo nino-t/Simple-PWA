@@ -1,6 +1,7 @@
 var db = require("./db.js");
 var moment = require("moment");
 var _ = require("lodash");
+var uid = require("uid");
 
 var formatResponseObject = function(message) {
   if (message) {
@@ -12,10 +13,34 @@ var formatResponseObject = function(message) {
 
 var get = function() {
   var messages = db.get("messages").value();
-  return messages.map(formatResponseObject);
+  return {
+    status: 200,
+    data: messages.map(formatResponseObject)
+  };
 };
+
+var store = function(payload) {
+  var message = {
+    "id":           uid(),
+    "user_id":      1,
+    "replay_id":    0,
+    "message":      _.get(payload, 'message', ''),
+    "created_at":   moment().format('YYYY-MM-DD HH:mm:ss')
+  };
+
+  db.get("messages")
+    .push(message)
+    .value();
+
+  return {
+    status: 200,
+    data: formatResponseObject(message)
+  };
+};
+
 
 module.exports = {
   get: get,
+  store: store,
   formatResponseObject: formatResponseObject
 };

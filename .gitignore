@@ -1,5 +1,6 @@
 .idea
 .vscode
+.sass-cache
 node_modules
 npm-debug.log
 server/db.json

@@ -2,12 +2,12 @@
 var CACHE_NAME = "lpwa-cache-v1";
 var CACHED_URLS = [
   "/index.html",
-  "/css/materialize.min.css",
+  "/css/youchat.min.css",
   "/js/jquery.min.js",
-  "/js/materialize.min.js",
   "/js/app.js",
   "/users.json",
   "/messages.json",
+  "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"
 ];
 
 self.addEventListener("install", function(event) {
@@ -82,11 +82,3 @@ self.addEventListener("activate", function(event) {
     })
   );
 });
-
-var createMessageUrl = function(messageDetails) {
-  var messageUrl = new URL("http://localhost:3000/message");
-  Object.keys(messageDetails).forEach(function(key) {
-    messageUrl.searchParams.append(key, messageDetails[key]);
-  });
-  return messageUrl;
-};
