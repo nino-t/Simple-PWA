@@ -1,0 +1,7 @@
+.idea
+.vscode
+node_modules
+npm-debug.log
+server/db.json
+server/push-keys.js
+.DS_Store
