@@ -1,13 +1,16 @@
 /* eslint-disable */
+importScripts("/js/chat-store.js");
 var CACHE_NAME = "lpwa-cache-v1";
 var CACHED_URLS = [
   "/index.html",
   "/css/youchat.min.css",
   "/js/jquery.min.js",
   "/js/app.js",
+  "/js/chat-store.js",
   "/users.json",
   "/messages.json",
-  "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"
+  "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"
 ];
 
 self.addEventListener("install", function(event) {
@@ -81,4 +84,54 @@ self.addEventListener("activate", function(event) {
       );
     })
   );
+});
+
+var postMessage = function(message) {
+  self.clients.matchAll({ includeUncontrolled: true }).then(function(clients) {
+    clients.forEach(function(client) {
+      client.postMessage(
+        {action: "update-message", message: message}
+      );
+    });
+  });
+};
+
+var syncMessages = function() {
+  return getMessages("idx_status", "Sending").then(function(messages) {
+    return Promise.all(
+      messages.map(function(message) {
+        var messageUrl = "http://localhost:3000/api/v1/messages"; 
+        return fetch(messageUrl, {
+          method: 'POST',
+          body: JSON.stringify(message),
+          headers:{
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(function(response) {
+          var json = response.json();
+          if (typeof json.status !== "undefined" && typeof json.data !== "undefined") {
+            json = json.data;
+          }
+
+          return json;
+        })
+        .then(function(newMessage) {
+          return updateInObjectStore(
+            "messages",
+            newMessage.id,
+            newMessage
+          ).then(function() {
+            postMessage(newMessage);
+          });
+        });
+      })
+    );
+  });
+};
+
+self.addEventListener("sync", function(event) {
+  if (event.tag === "sync-messages") {
+    event.waitUntil(syncMessages());
+  }
 });

@@ -8,20 +8,12 @@ if ("serviceWorker" in navigator) {
 }
 
 $(document).ready(function() {
-  var html = "";
-  $.get("http://localhost:3000/messages.json", function(data) {
-    if (!_.isUndefined(data.data)) {
-      var messages = data.data;
-      messages.map(function (message, index) {
-        html += renderMessage(message);
-      });
-    }
-
-    if (html !== '') {
-      $("#content").html(html);
-    }
-  });
+  populateMessages();
 });
+
+var populateMessages = function() {
+  getMessages().then(renderMessages);
+};
 
 function messageEnter(e) { 
   e = e || window.event;
@@ -34,33 +26,58 @@ function messageEnter(e) {
 
 function chatOnSubmit () {
   var $uiMessage = $("#input");
-  $.ajax({
-    type: "POST",
-    url: "http://localhost:3000/api/v1/messages",
-    dataType: "json",
-    data: {
-      message: $uiMessage.val()
-    },
-    success: function(data) {
-      var html = renderMessage(data.data);
-      $("#content").append(html);
-    }
-  });
+  var messageData = { 
+    id: Date.now().toString().substring(3, 11),
+    user_id: 1,
+    replay_id: 0,
+    message: $uiMessage.val(),
+    created_at: moment().format('YYYY-MM-DD HH:mm:ss'),
+    status: 'Sending'
+  }
+
+  addToObjectStore("messages", messageData);
+  renderMessage(messageData);
+
+  if ("serviceWorker" in navigator && "SyncManager" in window) {
+    navigator.serviceWorker.ready.then(function(registration) {
+      registration.sync.register("sync-messages");
+    });
+  } else {
+    $.ajax({
+      type: "POST",
+      url: "http://localhost:3000/api/v1/messages",
+      dataType: "json",
+      data: messageData,
+      success: function(data) {
+        console.log("Your ajax data success to created", data);
+      }
+    });  
+  }
 
   $uiMessage.val('');
   return false;
 }
 
+function renderMessages(messages) {
+  if (!_.isUndefined(messages.data) && !_.isUndefined(messages.status)) {
+    messages = messages.data;
+  }
+
+  messages.forEach(function(message) {
+    renderMessage(message);
+  });
+}
+
 function renderMessage (message) {
   var html = "";
-  if (message.user_id === 1) {
+  if (message["user_id"] === 1) {
     html += '<div class="message-wrapper me">';
   } else {
     html += '<div class="message-wrapper them">';
   }
     html += '<div class="circle-wrapper animated bounceIn"></div>';
-    html += '<div class="text-wrapper">'+ message.message +'</div>';
+    html += '<div class="text-wrapper">'+ message["message"] +'</div>';
   html += '</div>';
 
-  return html;
+  $("#content").append(html);
 }

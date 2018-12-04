@@ -25,6 +25,7 @@ var store = function(payload) {
     "user_id":      1,
     "replay_id":    0,
     "message":      _.get(payload, 'message', ''),
+    "status":       'Readed',
     "created_at":   moment().format('YYYY-MM-DD HH:mm:ss')
   };
 
